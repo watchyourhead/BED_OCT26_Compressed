@@ -72,3 +72,34 @@ POST http://localhost:3000/books/0064410935/copies
 Content-Type: application/json
 
 { "copyNo": 5, "rentalRate": 1.00 }
+
+### ---- Mixed Practice Circuit solutions (this branch only) ----
+
+### Station 1: POST /authors with validation (201, then 409 the second time)
+POST http://localhost:3000/authors
+Content-Type: application/json
+
+{ "id": 901, "name": "Sample Author" }
+
+### Station 2: optional name filter and paging
+GET http://localhost:3000/authors?name=john&limit=5
+
+### Station 3: link an existing author to an existing book (201, then 409)
+POST http://localhost:3000/books/0064410935/authors
+Content-Type: application/json
+
+{ "authorId": 2 }
+
+### Station 4: a new book and a new author in one transaction (201)
+POST http://localhost:3000/books/with-new-author
+Content-Type: application/json
+
+{
+  "isbn": "0000000030",
+  "title": "Circuit Training",
+  "yearPublish": "2026",
+  "publisherId": 1,
+  "bookCat": "NF",
+  "authorId": 902,
+  "authorName": "Tan Wei Ling"
+}
