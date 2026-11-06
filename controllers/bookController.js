@@ -11,4 +11,14 @@ async function getAuthors(req, res) {
   }
 }
 
-module.exports = { getAuthors };
+async function create(req, res) {
+  try {
+    const created = await bookModel.createBookWithAuthor(req.body);
+    res.status(201).json(created);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+module.exports = { getAuthors, create };

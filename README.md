@@ -17,6 +17,7 @@ Each session has an IPL (the 3-hour class) and an OAL (the 1-hour online work be
 | `s02-oal-end` | Settings move into a `.env` file (`dotenv`, `.env.example`, `.env` in `.gitignore`). Adds `docs/api-contract-authors.md`, a worked API contract table. This is also the starting point for Session 3. |
 | `s03-ipl-end` | Book, BookCopy and BookAuthor routes in `app.js`: `GET /books/:isbn`, `POST /books` (two INSERTs in one transaction), `PUT /books/:isbn`, the JOIN route `GET /authors/:id/books`, and the composite-key routes `GET` and `DELETE /books/:isbn/copies/:copyNo`. |
 | `s03-oal-end` | The MVC split. `models/` holds the SQL, `controllers/` holds the logic, `app.js` only points routes at controller functions. Adds `PUT /books/:isbn/copies/:copyNo` (with a Joi check on `rentalRate`) and `GET /books/:isbn/authors`. Adds the `joi` dependency. This is also the starting point for Session 4. |
+| `s04-ipl-end` | Orchestration. `POST /copies/rent` calls `checkAvailable()` then `markRented()` (404 / 409 / 200), one Joi schema checks `isbn` and `copyNo` together, `deleteCopy` is wrapped in `try / catch`, and `POST /books` moves into a Controller and Model with its transaction. |
 
 More tags are added here as each session is taught.
 

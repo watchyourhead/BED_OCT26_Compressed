@@ -8,6 +8,12 @@ const rateSchema = Joi.object({
   rentalRate: Joi.number().min(2.5).required(),
 });
 
+// One schema checks the pair together: a copy is identified by isbn AND copyNo.
+const copySchema = Joi.object({
+  isbn: Joi.string().length(10).required(),
+  copyNo: Joi.number().integer().min(1).required(),
+});
+
 async function updateRate(req, res) {
   const copyNo = parseInt(req.params.copyNo);
   if (isNaN(copyNo)) {
@@ -35,4 +41,48 @@ async function updateRate(req, res) {
   }
 }
 
-module.exports = { updateRate };
+// Orchestration: the Controller calls one Model to check, then another to write.
+// It never runs SQL itself.
+async function rentCopy(req, res) {
+  const { error, value } = copySchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+  const { isbn, copyNo } = value;
+
+  try {
+    const available = await bookCopyModel.checkAvailable(isbn, copyNo);
+    if (available === null) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    if (!available) {
+      // Do not touch the table: the copy is already out.
+      return res.status(409).json({ error: 'Copy is already rented' });
+    }
+    await bookCopyModel.markRented(isbn, copyNo);
+    res.status(200).json({ ISBN: isbn, CopyNo: copyNo, Status: 'M' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Every Model call sits inside try / catch, so a failed query gives a clean 500.
+async function deleteCopy(req, res) {
+  const copyNo = parseInt(req.params.copyNo);
+  if (isNaN(copyNo)) {
+    return res.status(400).json({ error: 'Invalid copy number' });
+  }
+  try {
+    const deleted = await bookCopyModel.deleteCopy(req.params.isbn, copyNo);
+    if (deleted === 0) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+module.exports = { updateRate, rentCopy, deleteCopy };

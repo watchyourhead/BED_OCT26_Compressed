@@ -231,54 +231,6 @@ app.get('/books/:isbn', async (req, res) => {
   }
 });
 
-// Add a book and who wrote it. Two writes, so they go in one transaction:
-// both rows are saved, or neither is.
-app.post('/books', async (req, res) => {
-  const { isbn, title, yearPublish, publisherId, bookCat, authorId } = req.body;
-  let connection;
-  try {
-    connection = await sql.connect(dbConfig);
-    const transaction = new sql.Transaction(connection);
-    await transaction.begin();
-    try {
-      const bookRequest = transaction.request();
-      bookRequest.input('isbn', sql.Char(10), isbn);
-      bookRequest.input('title', sql.VarChar(200), title);
-      bookRequest.input('yearPublish', sql.Char(4), yearPublish);
-      bookRequest.input('publisherId', sql.SmallInt, publisherId);
-      bookRequest.input('bookCat', sql.Char(2), bookCat);
-      await bookRequest.query(
-        `INSERT INTO Book (ISBN, Title, YearPublish, PublisherID, BookCat)
-         VALUES (@isbn, @title, @yearPublish, @publisherId, @bookCat)`
-      );
-
-      const authorRequest = transaction.request();
-      authorRequest.input('isbn', sql.Char(10), isbn);
-      authorRequest.input('authorId', sql.SmallInt, authorId);
-      await authorRequest.query(
-        'INSERT INTO BookAuthor (ISBN, AuthorID) VALUES (@isbn, @authorId)'
-      );
-
-      await transaction.commit();
-    } catch (txErr) {
-      await transaction.rollback();
-      throw txErr;
-    }
-    res.status(201).json({ ISBN: isbn, Title: title, AuthorID: authorId });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    if (connection) {
-      try {
-        await connection.close();
-      } catch (closeErr) {
-        console.error('Error closing connection:', closeErr);
-      }
-    }
-  }
-});
-
 // Update a book. Every changed field is bound with .input().
 app.put('/books/:isbn', async (req, res) => {
   const { title, yearPublish, publisherId, bookCat } = req.body;
@@ -391,44 +343,20 @@ app.get('/books/:isbn/copies/:copyNo', async (req, res) => {
   }
 });
 
-app.delete('/books/:isbn/copies/:copyNo', async (req, res) => {
-  const copyNo = parseInt(req.params.copyNo);
-  if (isNaN(copyNo)) {
-    return res.status(400).json({ error: 'Invalid copy number' });
-  }
-  let connection;
-  try {
-    connection = await sql.connect(dbConfig);
-    const request = connection.request();
-    request.input('isbn', sql.Char(10), req.params.isbn);
-    request.input('copyNo', sql.TinyInt, copyNo);
-    const result = await request.query(
-      'DELETE FROM BookCopy WHERE ISBN = @isbn AND CopyNo = @copyNo'
-    );
-    if (result.rowsAffected[0] === 0) {
-      return res.status(404).json({ error: 'Not found' });
-    }
-    res.status(204).send();
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
-  } finally {
-    if (connection) {
-      try {
-        await connection.close();
-      } catch (closeErr) {
-        console.error('Error closing connection:', closeErr);
-      }
-    }
-  }
-});
-
 // ---------------------------------------------------------------------
 // Session 3 OAL: the same logic, split in two (MVC).
 // The route is only a pointer now. The Controller decides, the Model queries.
 // ---------------------------------------------------------------------
 app.put('/books/:isbn/copies/:copyNo', bookCopyController.updateRate);
 app.get('/books/:isbn/authors', bookController.getAuthors);
+
+// ---------------------------------------------------------------------
+// Session 4 IPL: orchestrating models, validating across tables, failing safely.
+// These three moved out of app.js into a Controller and a Model.
+// ---------------------------------------------------------------------
+app.post('/books', bookController.create);
+app.post('/copies/rent', bookCopyController.rentCopy);
+app.delete('/books/:isbn/copies/:copyNo', bookCopyController.deleteCopy);
 
 app.listen(port, () => {
   console.log(`bookcat-api listening on http://localhost:${port}`);
