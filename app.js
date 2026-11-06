@@ -1,6 +1,8 @@
 const express = require('express');
 const sql = require('mssql');
 const dbConfig = require('./dbConfig');
+const bookController = require('./controllers/bookController');
+const bookCopyController = require('./controllers/bookCopyController');
 
 const app = express();
 const port = 3000;
@@ -420,6 +422,13 @@ app.delete('/books/:isbn/copies/:copyNo', async (req, res) => {
     }
   }
 });
+
+// ---------------------------------------------------------------------
+// Session 3 OAL: the same logic, split in two (MVC).
+// The route is only a pointer now. The Controller decides, the Model queries.
+// ---------------------------------------------------------------------
+app.put('/books/:isbn/copies/:copyNo', bookCopyController.updateRate);
+app.get('/books/:isbn/authors', bookController.getAuthors);
 
 app.listen(port, () => {
   console.log(`bookcat-api listening on http://localhost:${port}`);
