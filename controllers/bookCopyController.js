@@ -85,4 +85,28 @@ async function deleteCopy(req, res) {
   }
 }
 
-module.exports = { updateRate, rentCopy, deleteCopy };
+// Practice solution: same shape as rentCopy. Check, then write.
+async function returnCopy(req, res) {
+  const { error, value } = copySchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+  const { isbn, copyNo } = value;
+
+  try {
+    const rented = await bookCopyModel.checkRented(isbn, copyNo);
+    if (rented === null) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    if (!rented) {
+      return res.status(409).json({ error: 'Copy is not rented' });
+    }
+    await bookCopyModel.markReturned(isbn, copyNo);
+    res.status(200).json({ ISBN: isbn, CopyNo: copyNo, Status: 'D' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+module.exports = { updateRate, rentCopy, deleteCopy, returnCopy };

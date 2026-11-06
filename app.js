@@ -356,6 +356,7 @@ app.get('/books/:isbn/authors', bookController.getAuthors);
 // ---------------------------------------------------------------------
 app.post('/books', bookController.create);
 app.post('/copies/rent', bookCopyController.rentCopy);
+app.post('/copies/return', bookCopyController.returnCopy);
 app.delete('/books/:isbn/copies/:copyNo', bookCopyController.deleteCopy);
 
 app.listen(port, () => {

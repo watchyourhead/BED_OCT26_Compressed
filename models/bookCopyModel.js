@@ -101,4 +101,61 @@ async function deleteCopy(isbn, copyNo) {
   }
 }
 
-module.exports = { updateRate, checkAvailable, markRented, deleteCopy };
+// Practice solution: the return, the mirror image of the rental.
+// Check: is this copy out? Status 'M' means rented. Returns true / false, or null if no such copy.
+async function checkRented(isbn, copyNo) {
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('isbn', sql.Char(10), isbn);
+    request.input('copyNo', sql.TinyInt, copyNo);
+    const result = await request.query(
+      'SELECT Status FROM BookCopy WHERE ISBN = @isbn AND CopyNo = @copyNo'
+    );
+    if (!result.recordset[0]) {
+      return null;
+    }
+    return result.recordset[0].Status === 'M';
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+}
+
+async function markReturned(isbn, copyNo) {
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('isbn', sql.Char(10), isbn);
+    request.input('copyNo', sql.TinyInt, copyNo);
+    const result = await request.query(
+      `UPDATE BookCopy SET Status = 'D'
+       WHERE ISBN = @isbn AND CopyNo = @copyNo`
+    );
+    return result.rowsAffected[0];
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+}
+
+module.exports = {
+  updateRate,
+  checkAvailable,
+  markRented,
+  deleteCopy,
+  checkRented,
+  markReturned,
+};

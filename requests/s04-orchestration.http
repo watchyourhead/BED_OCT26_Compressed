@@ -35,3 +35,17 @@ Content-Type: application/json
 
 ### Delete a copy, now wrapped in try / catch (204, then 404 the second time)
 DELETE http://localhost:3000/books/0064410935/copies/9
+
+### ---- Practice solution (this branch only): return a copy ----
+
+### Return the copy rented above (200)
+POST http://localhost:3000/copies/return
+Content-Type: application/json
+
+{ "isbn": "0099826704", "copyNo": 1 }
+
+### Return it again: it is not rented (409)
+POST http://localhost:3000/copies/return
+Content-Type: application/json
+
+{ "isbn": "0099826704", "copyNo": 1 }
