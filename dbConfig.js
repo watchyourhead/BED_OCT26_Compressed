@@ -1,11 +1,14 @@
-// Settings for sql.connect(). This is a plain object, not a function.
-// Replace the values with your own SQL Server login.
-// (Session 2 OAL moves these into a .env file so the password is not in the code.)
+// Settings for sql.connect(). Still a plain object, not a function.
+// The values now come from a .env file (see .env.example), so the password
+// is never written in the code or pushed to GitHub.
+require('dotenv').config();
+
 const dbConfig = {
-  server: 'localhost',
-  database: 'NP Bookstore',
-  user: 'your_login',
-  password: 'your_password',
+  server: process.env.DB_SERVER,
+  database: process.env.DB_DATABASE,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  port: parseInt(process.env.DB_PORT) || 1433,
   options: {
     trustServerCertificate: true, // local development
   },

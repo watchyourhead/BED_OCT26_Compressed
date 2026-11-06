@@ -14,6 +14,7 @@ Each session has an IPL (the 3-hour class) and an OAL (the 1-hour online work be
 |---|---|
 | `s01-oal-end` | Node, npm and Express running. `GET /` and `GET /categories` (a hardcoded array). This is also the starting point for Session 2. |
 | `s02-ipl-end` | The live-coded routes against the NP Bookstore `Author` table: `GET /authors`, `GET /authors/:id`, `POST`, `PUT` and `DELETE`, each with `try / catch / finally`, `parseInt`, bound inputs and the right status code. |
+| `s02-oal-end` | Settings move into a `.env` file (`dotenv`, `.env.example`, `.env` in `.gitignore`). Adds `docs/api-contract-authors.md`, a worked API contract table. This is also the starting point for Session 3. |
 
 More tags are added here as each session is taught.
 
@@ -28,7 +29,10 @@ npm install
 npm start
 ```
 
-From Session 2 onward the routes need the **NP Bookstore** database on your own SQL Server. Put your own login in `dbConfig.js`. Do not commit a real password.
+From Session 2 onward the routes need the **NP Bookstore** database on your own SQL Server.
+
+- Until `s02-oal-end`, put your own login in `dbConfig.js`.
+- From `s02-oal-end` onward, copy `.env.example` to `.env` and put your login there. `.env` is ignored by git. Never commit a real password.
 
 Then open <http://localhost:3000/> in a browser. The files in `requests/` list the requests for each session.
 
