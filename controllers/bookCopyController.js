@@ -2,6 +2,7 @@
 // calls the Model and decides which response to send.
 const Joi = require('joi');
 const bookCopyModel = require('../models/bookCopyModel');
+const bookModel = require('../models/bookModel');
 
 // The same rule as CHECK (RentalRate >= 2.50) on BookCopy, one layer earlier.
 const rateSchema = Joi.object({
@@ -85,4 +86,27 @@ async function deleteCopy(req, res) {
   }
 }
 
-module.exports = { updateRate, rentCopy, deleteCopy };
+// The ISBN comes from the URL (req.params). The copy number and rate come from
+// the body (req.body). Both have been validated by the time this runs.
+//   404: no such book    409: that copy number already exists    400: bad input (validate)
+async function addCopy(req, res) {
+  const { isbn } = req.validated.params;
+  const { copyNo, rentalRate } = req.validated.body;
+
+  try {
+    if (!(await bookModel.exists(isbn))) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+    await bookCopyModel.addCopy(isbn, copyNo, rentalRate);
+    res.status(201).json({ ISBN: isbn, CopyNo: copyNo, RentalRate: rentalRate, Status: 'D' });
+  } catch (err) {
+    // 2627 = primary key violation: this ISBN already has this CopyNo.
+    if (err.number === 2627) {
+      return res.status(409).json({ error: 'That copy number already exists for this book' });
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+module.exports = { updateRate, rentCopy, deleteCopy, addCopy };

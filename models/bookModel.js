@@ -72,4 +72,69 @@ async function createBookWithAuthor(book) {
   }
 }
 
-module.exports = { getAuthorsByISBN, createBookWithAuthor };
+// ORDER BY cannot take a bound parameter, so the column name is picked from a
+// whitelist. The client only chooses a key. It never supplies SQL text.
+const SORT_COLUMNS = { title: 'Title', year: 'YearPublish' };
+
+// Optional filters: a WHERE clause (and its .input()) is added only when the
+// client sent that key. An omitted filter must not filter anything.
+async function list({ title, bookCat, sort, order, page, limit }) {
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+
+    let where = 'WHERE 1 = 1';
+    if (title) {
+      where += ' AND Title LIKE @title';
+      request.input('title', sql.VarChar(202), '%' + title + '%');
+    }
+    if (bookCat) {
+      where += ' AND BookCat = @bookCat';
+      request.input('bookCat', sql.Char(2), bookCat);
+    }
+
+    const sortColumn = SORT_COLUMNS[sort];
+    const direction = order === 'desc' ? 'DESC' : 'ASC';
+    request.input('offset', sql.Int, (page - 1) * limit);
+    request.input('limit', sql.Int, limit);
+
+    const result = await request.query(
+      `SELECT ISBN, Title, YearPublish, PublisherID, BookCat
+       FROM Book
+       ${where}
+       ORDER BY ${sortColumn} ${direction}
+       OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`
+    );
+    return result.recordset;
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+}
+
+async function exists(isbn) {
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('isbn', sql.Char(10), isbn);
+    const result = await request.query('SELECT ISBN FROM Book WHERE ISBN = @isbn');
+    return result.recordset.length > 0;
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+}
+
+module.exports = { getAuthorsByISBN, createBookWithAuthor, list, exists };

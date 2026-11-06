@@ -3,6 +3,11 @@ const sql = require('mssql');
 const dbConfig = require('./dbConfig');
 const bookController = require('./controllers/bookController');
 const bookCopyController = require('./controllers/bookCopyController');
+const memberController = require('./controllers/memberController');
+const logger = require('./middleware/logger');
+const validate = require('./middleware/validate');
+const memberSchema = require('./schemas/memberSchema');
+const { bookQuerySchema, isbnParamSchema, newCopySchema } = require('./schemas/bookSchemas');
 
 const app = express();
 const port = 3000;
@@ -10,6 +15,13 @@ const port = 3000;
 // Lets routes read JSON sent in the request body as req.body.
 // This line must come before the routes.
 app.use(express.json());
+
+// Lets routes read an HTML form's fields (application/x-www-form-urlencoded)
+// as req.body too. Like express.json(), it must come before the routes.
+app.use(express.urlencoded({ extended: true }));
+
+// Session 5: a middleware that runs for every request.
+app.use(logger);
 
 // Session 1 OAL: the first two routes.
 app.get('/', (req, res) => {
@@ -357,6 +369,20 @@ app.get('/books/:isbn/authors', bookController.getAuthors);
 app.post('/books', bookController.create);
 app.post('/copies/rent', bookCopyController.rentCopy);
 app.delete('/books/:isbn/copies/:copyNo', bookCopyController.deleteCopy);
+
+// ---------------------------------------------------------------------
+// Session 5 IPL: middleware, the query string, params and body together.
+// Order matters: the body parsers and logger are registered above, then each
+// route lists its middleware left to right, and the controller comes last.
+// ---------------------------------------------------------------------
+app.post('/members', validate(memberSchema), memberController.register);
+app.get('/books', validate(bookQuerySchema, 'query'), bookController.list);
+app.post(
+  '/books/:isbn/copies',
+  validate(isbnParamSchema, 'params'),
+  validate(newCopySchema),
+  bookCopyController.addCopy
+);
 
 app.listen(port, () => {
   console.log(`bookcat-api listening on http://localhost:${port}`);

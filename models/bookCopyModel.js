@@ -101,4 +101,32 @@ async function deleteCopy(isbn, copyNo) {
   }
 }
 
-module.exports = { updateRate, checkAvailable, markRented, deleteCopy };
+// Insert a new copy. A new copy starts on the shelf, so Status is 'D'.
+// A copy number that already exists for this ISBN breaks the primary key.
+async function addCopy(isbn, copyNo, rentalRate) {
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('isbn', sql.Char(10), isbn);
+    request.input('copyNo', sql.TinyInt, copyNo);
+    request.input('rentalRate', sql.SmallMoney, rentalRate);
+    // DateIn is set here, rounded DOWN to the minute. The column is smalldatetime,
+    // which rounds to the nearest minute, so its own GETDATE() default can land a
+    // few seconds in the future and fail CHECK (DateIn <= GETDATE()).
+    await request.query(
+      `INSERT INTO BookCopy (ISBN, CopyNo, DateIn, RentalRate, Status)
+       VALUES (@isbn, @copyNo, DATEADD(MINUTE, DATEDIFF(MINUTE, 0, GETDATE()), 0), @rentalRate, 'D')`
+    );
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+}
+
+module.exports = { updateRate, checkAvailable, markRented, deleteCopy, addCopy };

@@ -21,4 +21,16 @@ async function create(req, res) {
   }
 }
 
-module.exports = { getAuthors, create };
+// validate(bookQuerySchema, 'query') has already converted page and limit to
+// numbers and filled in the defaults.
+async function list(req, res) {
+  try {
+    const books = await bookModel.list(req.validated.query);
+    res.status(200).json(books);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+module.exports = { getAuthors, create, list };
