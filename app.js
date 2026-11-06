@@ -7,7 +7,15 @@ const memberController = require('./controllers/memberController');
 const logger = require('./middleware/logger');
 const validate = require('./middleware/validate');
 const memberSchema = require('./schemas/memberSchema');
-const { bookQuerySchema, isbnParamSchema, newCopySchema } = require('./schemas/bookSchemas');
+const errorHandler = require('./middleware/errorHandler');
+const {
+  bookQuerySchema,
+  isbnParamSchema,
+  newCopySchema,
+  newBookSchema,
+  copySchema,
+  rentSchema,
+} = require('./schemas/bookSchemas');
 
 const app = express();
 const port = 3000;
@@ -366,8 +374,6 @@ app.get('/books/:isbn/authors', bookController.getAuthors);
 // Session 4 IPL: orchestrating models, validating across tables, failing safely.
 // These three moved out of app.js into a Controller and a Model.
 // ---------------------------------------------------------------------
-app.post('/books', bookController.create);
-app.post('/copies/rent', bookCopyController.rentCopy);
 app.delete('/books/:isbn/copies/:copyNo', bookCopyController.deleteCopy);
 
 // ---------------------------------------------------------------------
@@ -383,6 +389,27 @@ app.post(
   validate(newCopySchema),
   bookCopyController.addCopy
 );
+
+// ---------------------------------------------------------------------
+// Session 6 lab: the Counter Desk prototype (reference solution).
+// Checkpoint 1: GET /books and GET /books/:isbn (above).
+// Checkpoint 2: POST /books, a transaction that writes Book and its first copy.
+// Checkpoint 3: GET /books with filters (above) and POST /books/:isbn/copies (above).
+// Checkpoint 4: rent and return. Each one is a transaction over Loan and BookCopy.
+// Stretch: PATCH a copy's rental rate, DELETE a copy (above), availability, error handler.
+// ---------------------------------------------------------------------
+app.post('/books', validate(newBookSchema), bookController.create);
+app.post('/copies/rent', validate(rentSchema), bookCopyController.rentCopy);
+app.post('/copies/return', validate(copySchema), bookCopyController.returnCopy);
+app.patch('/books/:isbn/copies/:copyNo', bookCopyController.updateRate);
+app.get(
+  '/books/:isbn/availability',
+  validate(isbnParamSchema, 'params'),
+  bookController.availability
+);
+
+// The error handler goes last, after every route.
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`bookcat-api listening on http://localhost:${port}`);

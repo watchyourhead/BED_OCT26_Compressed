@@ -56,18 +56,77 @@ async function checkAvailable(isbn, copyNo) {
 }
 
 // Write: mark the copy as rented. The Controller only calls this after the check passes.
-async function markRented(isbn, copyNo) {
+// Pass a transaction to make this write part of a bigger all-or-nothing unit
+// (the Loan INSERT and this UPDATE move together). Without one, it uses its own connection.
+// AND Status = 'D' stops two requests from renting the same copy at the same moment.
+async function markRented(isbn, copyNo, transaction) {
+  let connection;
+  try {
+    let request;
+    if (transaction) {
+      request = transaction.request();
+    } else {
+      connection = await sql.connect(dbConfig);
+      request = connection.request();
+    }
+    request.input('isbn', sql.Char(10), isbn);
+    request.input('copyNo', sql.TinyInt, copyNo);
+    const result = await request.query(
+      `UPDATE BookCopy SET Status = 'M'
+       WHERE ISBN = @isbn AND CopyNo = @copyNo AND Status = 'D'`
+    );
+    return result.rowsAffected[0];
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+}
+
+// The mirror image: back on the shelf.
+async function markReturned(isbn, copyNo, transaction) {
+  let connection;
+  try {
+    let request;
+    if (transaction) {
+      request = transaction.request();
+    } else {
+      connection = await sql.connect(dbConfig);
+      request = connection.request();
+    }
+    request.input('isbn', sql.Char(10), isbn);
+    request.input('copyNo', sql.TinyInt, copyNo);
+    const result = await request.query(
+      `UPDATE BookCopy SET Status = 'D'
+       WHERE ISBN = @isbn AND CopyNo = @copyNo AND Status = 'M'`
+    );
+    return result.rowsAffected[0];
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+}
+
+// Stretch: how many copies of this title are on the shelf right now?
+async function countAvailable(isbn) {
   let connection;
   try {
     connection = await sql.connect(dbConfig);
     const request = connection.request();
     request.input('isbn', sql.Char(10), isbn);
-    request.input('copyNo', sql.TinyInt, copyNo);
     const result = await request.query(
-      `UPDATE BookCopy SET Status = 'M'
-       WHERE ISBN = @isbn AND CopyNo = @copyNo`
+      `SELECT COUNT(*) AS Available FROM BookCopy WHERE ISBN = @isbn AND Status = 'D'`
     );
-    return result.rowsAffected[0];
+    return result.recordset[0].Available;
   } finally {
     if (connection) {
       try {
@@ -129,4 +188,12 @@ async function addCopy(isbn, copyNo, rentalRate) {
   }
 }
 
-module.exports = { updateRate, checkAvailable, markRented, deleteCopy, addCopy };
+module.exports = {
+  updateRate,
+  checkAvailable,
+  markRented,
+  markReturned,
+  countAvailable,
+  deleteCopy,
+  addCopy,
+};

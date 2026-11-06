@@ -21,6 +21,7 @@ Each session has an IPL (the 3-hour class) and an OAL (the 1-hour online work be
 | `s04-oal-end` | Adds `docs/s04-oal-sight-reading/`, the routes you read in the OAL. They are for reading only and nothing loads them. The app is unchanged from `s04-ipl-end`. This is also the starting point for Session 5. |
 | `s05-ipl-end` | Middleware. `middleware/logger.js` and `middleware/validate.js` (`validate(schema)` returns a middleware), `express.urlencoded()`, `schemas/` for the Joi rules. New routes: `POST /members`, `GET /books` (optional filters, paging with `OFFSET / FETCH`, sort whitelist) and `POST /books/:isbn/copies` (404 / 409 / 400). |
 | `s05-oal-end` | Adds `docs/s05-oal-sight-reading/`: `requireLogin`, `requireRole` and the route-order example, for reading only. The app is unchanged from `s05-ipl-end`. This is also the starting point for Session 6. |
+| `s06-lab-end` | **Reference solution for the Session 6 lab**, the Counter Desk prototype. `POST /books` adds a book and its first copy in one transaction. `POST /copies/rent` and `POST /copies/return` each write the `Loan` and `BookCopy` tables in one transaction (`LoanNo` is `IDENTITY`, so `OUTPUT INSERTED.LoanNo` gets it back). Stretch: `PATCH` a copy's rate, `GET /books/:isbn/availability`, and an error-handling middleware. Released after the lab session. |
 
 More tags are added here as each session is taught.
 

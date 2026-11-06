@@ -28,9 +28,11 @@ async function getAuthorsByISBN(isbn) {
   }
 }
 
-// Two writes, one transaction: Book and BookAuthor are saved together or not at all.
-// Both INSERTs use transaction.request(), so both belong to the transaction.
-async function createBookWithAuthor(book) {
+// Adding a book is more than one write, so it is one transaction:
+// the Book row, its first copy (CopyNo 1, on the shelf), and the BookAuthor row if an
+// author was given. All of them are saved, or none. Each INSERT uses transaction.request().
+// DateIn is the current minute rounded DOWN (see loanModel.js for why).
+async function createBook(book) {
   let connection;
   try {
     connection = await sql.connect(dbConfig);
@@ -41,26 +43,36 @@ async function createBookWithAuthor(book) {
       bookRequest.input('isbn', sql.Char(10), book.isbn);
       bookRequest.input('title', sql.VarChar(200), book.title);
       bookRequest.input('yearPublish', sql.Char(4), book.yearPublish);
-      bookRequest.input('publisherId', sql.SmallInt, book.publisherId);
-      bookRequest.input('bookCat', sql.Char(2), book.bookCat);
+      bookRequest.input('publisherId', sql.SmallInt, book.publisherId || null);
+      bookRequest.input('bookCat', sql.Char(2), book.bookCat || null);
       await bookRequest.query(
         `INSERT INTO Book (ISBN, Title, YearPublish, PublisherID, BookCat)
          VALUES (@isbn, @title, @yearPublish, @publisherId, @bookCat)`
       );
 
-      const authorRequest = transaction.request();
-      authorRequest.input('isbn', sql.Char(10), book.isbn);
-      authorRequest.input('authorId', sql.SmallInt, book.authorId);
-      await authorRequest.query(
-        'INSERT INTO BookAuthor (ISBN, AuthorID) VALUES (@isbn, @authorId)'
+      const copyRequest = transaction.request();
+      copyRequest.input('isbn', sql.Char(10), book.isbn);
+      copyRequest.input('rentalRate', sql.SmallMoney, book.rentalRate);
+      await copyRequest.query(
+        `INSERT INTO BookCopy (ISBN, CopyNo, DateIn, RentalRate, Status)
+         VALUES (@isbn, 1, DATEADD(MINUTE, DATEDIFF(MINUTE, 0, GETDATE()), 0), @rentalRate, 'D')`
       );
+
+      if (book.authorId) {
+        const authorRequest = transaction.request();
+        authorRequest.input('isbn', sql.Char(10), book.isbn);
+        authorRequest.input('authorId', sql.SmallInt, book.authorId);
+        await authorRequest.query(
+          'INSERT INTO BookAuthor (ISBN, AuthorID) VALUES (@isbn, @authorId)'
+        );
+      }
 
       await transaction.commit();
     } catch (txErr) {
       await transaction.rollback();
       throw txErr;
     }
-    return { ISBN: book.isbn, Title: book.title, AuthorID: book.authorId };
+    return { ISBN: book.isbn, Title: book.title, CopyNo: 1, RentalRate: book.rentalRate, Status: 'D' };
   } finally {
     if (connection) {
       try {
@@ -137,4 +149,4 @@ async function exists(isbn) {
   }
 }
 
-module.exports = { getAuthorsByISBN, createBookWithAuthor, list, exists };
+module.exports = { getAuthorsByISBN, createBook, list, exists };

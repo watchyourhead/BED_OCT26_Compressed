@@ -35,4 +35,23 @@ async function create(member) {
   }
 }
 
-module.exports = { create };
+async function exists(memberId) {
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('memberId', sql.SmallInt, memberId);
+    const result = await request.query('SELECT MemberID FROM Member WHERE MemberID = @memberId');
+    return result.recordset.length > 0;
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+}
+
+module.exports = { create, exists };
