@@ -35,14 +35,27 @@ Replace `s02-oal-end` with the latest tag taught. Do not use `git push public --
 
 | What | When |
 |---|---|
-| Practice solution for a session (for example `s02-practice-solution`) | After the next session |
-| Session 6 lab answer (`s06-lab-end` and its solution branch) | After the lab session |
+| Practice solution for a session (`sNN-practice-solution` on `solutions/sNN-practice`) | After the next session |
+| Session 6 lab answer (`s06-lab-end`) | After the lab session |
 
 To release a practice solution:
 
 ```bash
-git push public solutions/s02-practice s02-practice-solution
+git push public solutions/s03-practice s03-practice-solution
 ```
+
+`s06-lab-end` is on `main`, because it follows `s05-oal-end`. **Do not push `main` past `s05-oal-end` until the lab session is over**, and push the lab answer only then:
+
+```bash
+git push public s06-lab-end:refs/heads/main
+git push public s06-lab-end
+```
+
+## Tag order on main
+
+`s01-oal-end`, `s02-ipl-end`, `s02-oal-end`, `s03-ipl-end`, `s03-oal-end`, `s04-ipl-end`, `s04-oal-end`, `s05-ipl-end`, `s05-oal-end`, `s06-lab-end`.
+
+Each practice solution branches from the matching `-ipl-end` tag (`s02` to `s05`). Sessions 3 to 5 have cold-read snippets and answers under `teaching/`.
 
 ## Adding a new session
 
