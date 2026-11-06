@@ -20,6 +20,7 @@ Each session has an IPL (the 3-hour class) and an OAL (the 1-hour online work be
 | `s04-ipl-end` | Orchestration. `POST /copies/rent` calls `checkAvailable()` then `markRented()` (404 / 409 / 200), one Joi schema checks `isbn` and `copyNo` together, `deleteCopy` is wrapped in `try / catch`, and `POST /books` moves into a Controller and Model with its transaction. |
 | `s04-oal-end` | Adds `docs/s04-oal-sight-reading/`, the routes you read in the OAL. They are for reading only and nothing loads them. The app is unchanged from `s04-ipl-end`. This is also the starting point for Session 5. |
 | `s05-ipl-end` | Middleware. `middleware/logger.js` and `middleware/validate.js` (`validate(schema)` returns a middleware), `express.urlencoded()`, `schemas/` for the Joi rules. New routes: `POST /members`, `GET /books` (optional filters, paging with `OFFSET / FETCH`, sort whitelist) and `POST /books/:isbn/copies` (404 / 409 / 400). |
+| `s05-oal-end` | Adds `docs/s05-oal-sight-reading/`: `requireLogin`, `requireRole` and the route-order example, for reading only. The app is unchanged from `s05-ipl-end`. This is also the starting point for Session 6. |
 
 More tags are added here as each session is taught.
 
