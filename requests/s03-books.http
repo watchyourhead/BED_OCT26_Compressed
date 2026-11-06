@@ -60,3 +60,23 @@ GET http://localhost:3000/books/0064410935/copies/9
 
 ### Delete one copy (204). Try it on a copy of the book you added in this session.
 DELETE http://localhost:3000/books/0064410935/copies/9
+
+### ---- Practice solutions (this branch only) ----
+
+### Practice 1: the full list
+GET http://localhost:3000/books
+
+### Practice 3: every copy of a title
+GET http://localhost:3000/books/0064410935/copies
+
+### Practice 3: update the rental rate (200). 1.00 is refused (400).
+PUT http://localhost:3000/books/0064410935/copies/2
+Content-Type: application/json
+
+{ "rentalRate": 9.00 }
+
+### Practice 4: a book's authors
+GET http://localhost:3000/books/0064410935/authors
+
+### Practice 5: safe search. The quote in the title does not break it.
+GET http://localhost:3000/books/search?title=Charlotte's

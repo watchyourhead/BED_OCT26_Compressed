@@ -201,6 +201,65 @@ app.delete('/authors/:id', async (req, res) => {
 // identified by ISBN and CopyNo together.
 // ---------------------------------------------------------------------
 
+// =====================================================================
+// Session 3 practice solutions (Practice 1 to 5). Released after Session 4.
+// =====================================================================
+
+// Practice 1: the full list.
+app.get('/books', async (req, res) => {
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    const result = await request.query(
+      'SELECT ISBN, Title, YearPublish, PublisherID, BookCat FROM Book'
+    );
+    res.status(200).json(result.recordset);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+});
+
+// Practice 5: safe search. The value is bound with .input(), never concatenated.
+// This route is registered BEFORE '/books/:isbn'. Otherwise Express would match
+// '/books/search' as an isbn of 'search'.
+app.get('/books/search', async (req, res) => {
+  const title = req.query.title;
+  if (!title) {
+    return res.status(400).json({ error: 'title is required' });
+  }
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('title', sql.VarChar(200), '%' + title + '%');
+    const result = await request.query(
+      'SELECT ISBN, Title, YearPublish FROM Book WHERE Title LIKE @title'
+    );
+    res.status(200).json(result.recordset);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+});
+
 // One book by ISBN. An empty recordset means 404.
 app.get('/books/:isbn', async (req, res) => {
   let connection;
@@ -407,6 +466,128 @@ app.delete('/books/:isbn/copies/:copyNo', async (req, res) => {
       return res.status(404).json({ error: 'Not found' });
     }
     res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+});
+
+// Practice 2: delete a book. A book that still has copies or authors is refused
+// by the foreign keys, which comes back as a 500 for now.
+app.delete('/books/:isbn', async (req, res) => {
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('isbn', sql.Char(10), req.params.isbn);
+    const result = await request.query('DELETE FROM Book WHERE ISBN = @isbn');
+    if (result.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+});
+
+// Practice 3: every copy of one title.
+app.get('/books/:isbn/copies', async (req, res) => {
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('isbn', sql.Char(10), req.params.isbn);
+    const result = await request.query(
+      `SELECT ISBN, CopyNo, DateIn, RentalRate, Status
+       FROM BookCopy
+       WHERE ISBN = @isbn`
+    );
+    res.status(200).json(result.recordset);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+});
+
+// Practice 3: update the rental rate. Both parts of the key are bound and used in
+// the WHERE clause. The rate is checked here too, mirroring CHECK (RentalRate >= 2.50).
+app.put('/books/:isbn/copies/:copyNo', async (req, res) => {
+  const copyNo = parseInt(req.params.copyNo);
+  const rentalRate = Number(req.body.rentalRate);
+  if (isNaN(copyNo)) {
+    return res.status(400).json({ error: 'Invalid copy number' });
+  }
+  if (isNaN(rentalRate) || rentalRate < 2.5) {
+    return res.status(400).json({ error: 'rentalRate must be a number, at least 2.50' });
+  }
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('isbn', sql.Char(10), req.params.isbn);
+    request.input('copyNo', sql.TinyInt, copyNo);
+    request.input('rentalRate', sql.SmallMoney, rentalRate);
+    const result = await request.query(
+      `UPDATE BookCopy SET RentalRate = @rentalRate
+       WHERE ISBN = @isbn AND CopyNo = @copyNo`
+    );
+    if (result.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    res.status(200).json({ ISBN: req.params.isbn, CopyNo: copyNo, RentalRate: rentalRate });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+});
+
+// Practice 4: a book's own authors, the JOIN the other way round.
+app.get('/books/:isbn/authors', async (req, res) => {
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('isbn', sql.Char(10), req.params.isbn);
+    const result = await request.query(
+      `SELECT ba.ISBN, a.AuthorID, a.Name
+       FROM BookAuthor ba
+       JOIN Author a ON a.AuthorID = ba.AuthorID
+       WHERE ba.ISBN = @isbn`
+    );
+    res.status(200).json(result.recordset);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
