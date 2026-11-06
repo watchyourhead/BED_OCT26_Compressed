@@ -1,0 +1,29 @@
+### Session 2 practice solution: the Publisher routes.
+### Use the VS Code "REST Client" extension, or copy these into Postman.
+
+### All publishers (200)
+GET http://localhost:3000/publishers
+
+### One publisher (200)
+GET http://localhost:3000/publishers/1
+
+### An id that matches nothing (404)
+GET http://localhost:3000/publishers/999
+
+### An id that is not a number (400)
+GET http://localhost:3000/publishers/abc
+
+### Add a publisher (201). The client supplies the id, because no primary key is IDENTITY.
+POST http://localhost:3000/publishers
+Content-Type: application/json
+
+{ "id": 900, "name": "Mulberry Books" }
+
+### Change a publisher name (200, or 404 if the id does not exist)
+PUT http://localhost:3000/publishers/900
+Content-Type: application/json
+
+{ "name": "Mulberry Books Ltd" }
+
+### Remove a publisher (204, no body, or 404 if the id does not exist)
+DELETE http://localhost:3000/publishers/900

@@ -194,6 +194,174 @@ app.delete('/authors/:id', async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------
+// Session 2 practice solution: the same five routes on the Publisher table
+// (PublisherID smallint, Name varchar(50), ids 1 to 8 are seeded).
+// Same shape as the Author routes, so the pattern transfers one to one.
+// ---------------------------------------------------------------------
+
+// GET /publishers: all publishers.
+app.get('/publishers', async (req, res) => {
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const result = await connection
+      .request()
+      .query('SELECT PublisherID, Name FROM Publisher');
+    res.status(200).json(result.recordset);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+});
+
+// GET /publishers/:id: one publisher.
+app.get('/publishers/:id', async (req, res) => {
+  // req.params.id is always a string, so convert it first.
+  const publisherId = parseInt(req.params.id);
+  if (isNaN(publisherId)) {
+    return res.status(400).json({ error: 'Invalid id' });
+  }
+
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('id', publisherId);
+    const result = await request.query(
+      'SELECT PublisherID, Name FROM Publisher WHERE PublisherID = @id'
+    );
+    if (!result.recordset[0]) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    res.status(200).json(result.recordset[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+});
+
+// POST /publishers: add a publisher.
+// No NP Bookstore primary key is IDENTITY, so the client sends the id.
+// A duplicate id breaks the primary key and ends up in catch as a 500.
+app.post('/publishers', async (req, res) => {
+  const { id, name } = req.body;
+
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('id', id);
+    request.input('name', name);
+    const result = await request.query(
+      'INSERT INTO Publisher (PublisherID, Name) OUTPUT INSERTED.* VALUES (@id, @name)'
+    );
+    // OUTPUT INSERTED.* returns the row exactly as stored.
+    res.status(201).json(result.recordset[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+});
+
+// PUT /publishers/:id: change a publisher's name.
+// The URL (req.params) picks the row. The body (req.body) carries the new value.
+app.put('/publishers/:id', async (req, res) => {
+  const publisherId = parseInt(req.params.id);
+  if (isNaN(publisherId)) {
+    return res.status(400).json({ error: 'Invalid id' });
+  }
+  const { name } = req.body;
+
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('id', publisherId);
+    request.input('name', name);
+    const result = await request.query(
+      'UPDATE Publisher SET Name = @name WHERE PublisherID = @id'
+    );
+    // An UPDATE that matches no row is not an error to SQL Server,
+    // so the route has to check.
+    if (result.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    res.status(200).json({ PublisherID: publisherId, Name: name });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+});
+
+// DELETE /publishers/:id: remove a publisher.
+// A publisher who is referenced by a Book is refused by the foreign key,
+// which ends up in catch as a 500.
+app.delete('/publishers/:id', async (req, res) => {
+  const publisherId = parseInt(req.params.id);
+  if (isNaN(publisherId)) {
+    return res.status(400).json({ error: 'Invalid id' });
+  }
+
+  let connection;
+  try {
+    connection = await sql.connect(dbConfig);
+    const request = connection.request();
+    request.input('id', publisherId);
+    const result = await request.query(
+      'DELETE FROM Publisher WHERE PublisherID = @id'
+    );
+    if (result.rowsAffected[0] === 0) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    // 204 means success with no body, so this is the one response without .json().
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) {
+      try {
+        await connection.close();
+      } catch (closeErr) {
+        console.error('Error closing connection:', closeErr);
+      }
+    }
+  }
+});
+
 app.listen(port, () => {
   console.log(`bookcat-api listening on http://localhost:${port}`);
 });
