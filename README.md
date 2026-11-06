@@ -15,6 +15,7 @@ Each session has an IPL (the 3-hour class) and an OAL (the 1-hour online work be
 | `s01-oal-end` | Node, npm and Express running. `GET /` and `GET /categories` (a hardcoded array). This is also the starting point for Session 2. |
 | `s02-ipl-end` | The live-coded routes against the NP Bookstore `Author` table: `GET /authors`, `GET /authors/:id`, `POST`, `PUT` and `DELETE`, each with `try / catch / finally`, `parseInt`, bound inputs and the right status code. |
 | `s02-oal-end` | Settings move into a `.env` file (`dotenv`, `.env.example`, `.env` in `.gitignore`). Adds `docs/api-contract-authors.md`, a worked API contract table. This is also the starting point for Session 3. |
+| `s03-ipl-end` | Book, BookCopy and BookAuthor routes in `app.js`: `GET /books/:isbn`, `POST /books` (two INSERTs in one transaction), `PUT /books/:isbn`, the JOIN route `GET /authors/:id/books`, and the composite-key routes `GET` and `DELETE /books/:isbn/copies/:copyNo`. |
 
 More tags are added here as each session is taught.
 
