@@ -18,7 +18,7 @@ const {
 } = require('./schemas/bookSchemas');
 
 const app = express();
-const port = 3000;
+const port = 3001;
 
 // Lets routes read JSON sent in the request body as req.body.
 // This line must come before the routes.

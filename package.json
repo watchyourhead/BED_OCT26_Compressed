@@ -8,9 +8,10 @@
   },
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
-    "joi": "^17.13.3",
+    "joi": "^17.13.9",
     "mssql": "^11.0.2"
   }
 }
