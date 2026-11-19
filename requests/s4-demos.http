@@ -1,0 +1,143 @@
+### =====================================================================
+### Session 4 demos (tag s4-demos). Grouped to match the slides:
+### SHOW FIRST, LIVE DEMO 1, LIVE DEMO 2, LIVE DEMO 3, then the cold-reads.
+### VS Code "REST Client" extension, or copy into Postman.
+### Before class: npm install, then run section 1 of requests/s4-demos.sql.
+### 0099826704 copy 1 and 0099895102 copy 1 are the only seed copies that
+### start available (Status 'D'). Test book 0000000003 has copies 1 and 2.
+### =====================================================================
+
+
+### ---------------------------------------------------------------------
+### SHOW FIRST ("What you'll build" slide): rent 200, again 409, bad copy 400
+### ---------------------------------------------------------------------
+
+### Rent it (200)
+PUT http://localhost:3000/books/0099826704/copies/1/rent
+
+### Rent it again (409)
+PUT http://localhost:3000/books/0099826704/copies/1/rent
+
+### Bad copy number (400, Joi's message)
+PUT http://localhost:3000/books/0099826704/copies/0/rent
+
+### Put it back (200) so Live Demo 1 starts clean
+PUT http://localhost:3000/books/0099826704/copies/1/return
+
+
+### ---------------------------------------------------------------------
+### LIVE DEMO 1: Rent It Twice (end of Check, Then Write)
+### ---------------------------------------------------------------------
+
+### 1) Rent (S4-A3, two helpers): 200, Status 'M'
+PUT http://localhost:3000/books/0099826704/copies/1/rent
+
+### 2) Same request again: 409, checkAvailable() said no, markRented() never ran
+PUT http://localhost:3000/books/0099826704/copies/1/rent
+
+### 3) No copy 9 on the test book: 404
+PUT http://localhost:3000/books/0000000003/copies/9/rent
+
+### 4a) Reset with the return route (Lab 9): 200
+PUT http://localhost:3000/books/0099826704/copies/1/return
+
+### 4b) The "before" route (S4-B1, everything inline): the same 200
+PUT http://localhost:3000/putrentinlinedemo/0099826704/copies/1
+
+### Reset afterwards (200)
+PUT http://localhost:3000/books/0099826704/copies/1/return
+
+
+### ---------------------------------------------------------------------
+### JOI COLD-READ (prediction + answer slides). Test book 0000000003.
+### Optional: run after the answer slide if the class wants proof.
+### ---------------------------------------------------------------------
+
+### a) 1.00: 400 from Joi, updateRate never runs
+PUT http://localhost:3000/books/0000000003/copies/1
+Content-Type: application/json
+
+{ "rentalRate": 1.00 }
+
+### b) 3.50: 200 and the updated row
+PUT http://localhost:3000/books/0000000003/copies/1
+Content-Type: application/json
+
+{ "rentalRate": 3.50 }
+
+### c) empty body: 400, rentalRate is required
+PUT http://localhost:3000/books/0000000003/copies/1
+Content-Type: application/json
+
+{ }
+
+
+### ---------------------------------------------------------------------
+### LIVE DEMO 2: Shape or Row? (right after Cashier or Kitchen?)
+### ---------------------------------------------------------------------
+
+### 1a) copyNo 0: 400 (bad shape)
+PUT http://localhost:3000/books/0099826704/copies/0/rent
+
+### 1b) copyNo abc: 400 (bad shape)
+PUT http://localhost:3000/books/0099826704/copies/abc/rent
+
+### 2) ISBN too short: 400 (bad shape)
+PUT http://localhost:3000/books/123/copies/1/rent
+
+### 3) Good shape, no copy 99: 404 (only the lookup can tell)
+PUT http://localhost:3000/books/0099826704/copies/99/rent
+
+### 4) 1.00: 400 from Joi before any query (Session 3 got a 500 from the CHECK constraint)
+PUT http://localhost:3000/books/0000000003/copies/1
+Content-Type: application/json
+
+{ "rentalRate": 1.00 }
+
+
+### ---------------------------------------------------------------------
+### LIVE DEMO 3: Search, Then Break It (end of Failing Safely)
+### Nothing is deleted in 4: the helper's table name is misspelt on purpose.
+### ---------------------------------------------------------------------
+
+### 1) A search: only matching titles (200)
+GET http://localhost:3000/books?title=the
+
+### 2) No title: every book (200)
+GET http://localhost:3000/books
+
+### 3) Nothing matches: 200 and [], not 404
+GET http://localhost:3000/books?title=zzzz
+
+### 4a) No try (S4-B2): Express's default 500 page (HTML), no JSON
+DELETE http://localhost:3000/deletecopynotrydemo/0000000003/copies/2
+
+### 4b) With try (S4-B3): 500 with { "error": "Database error" }, real error in the terminal
+DELETE http://localhost:3000/deletecopytrydemo/0000000003/copies/2
+
+
+### ---------------------------------------------------------------------
+### COLD-READ SNIPPETS A to D: instructor check only.
+### Run section 1 of requests/s4-demos.sql first.
+### ---------------------------------------------------------------------
+
+### Snippet A: 200 ...
+PUT http://localhost:3000/s4-snippet-a/books/0099826704/copies/1/rent
+
+### Snippet A again: 200 AGAIN, the copy was already rented. Reset with section 2 of the .sql.
+PUT http://localhost:3000/s4-snippet-a/books/0099826704/copies/1/rent
+
+### Snippet B: passes every field check, then 500 (copy 2 already exists: primary key)
+POST http://localhost:3000/s4-snippet-b/books/0000000003/copies
+Content-Type: application/json
+
+{ "copyNo": 2, "rentalRate": 3.00 }
+
+### Snippet C: 1.00 hits the CHECK constraint, no try: Express's default 500 page
+PUT http://localhost:3000/s4-snippet-c/books/0000000003/copies/1
+Content-Type: application/json
+
+{ "rentalRate": 1.00 }
+
+### Snippet D: no title: 200 and [] (compare Live Demo 3 step 2: every book)
+GET http://localhost:3000/s4-snippet-d/books
