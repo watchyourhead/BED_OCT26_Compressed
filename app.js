@@ -777,7 +777,8 @@ app.post('/s3-snippet-d/books', async (req, res) => {
 // SESSION 4 DEMOS  (tag: s4-demos, built on s3-demos)
 // ---------------------------------------------------------------------
 // Everything the Session 4 IPL runs live, in slide order. Still all in
-// app.js: no MVC until Session 5.
+// app.js: no MVC until Session 5. Comments name slides by title, not
+// number, because the deck keeps changing.
 //
 //   PART A  GOOD ROUTES  - what the slides teach. Students build these
 //                          themselves in OAL Labs 8, 9 and 10.
@@ -799,7 +800,7 @@ app.post('/s3-snippet-d/books', async (req, res) => {
 // =====================================================================
 
 // ---------------------------------------------------------------------
-// S4-A1  Joi schemas                   Slides 18 to 26
+// S4-A1  Joi schemas                   Validating Across Tables section
 // copySchema checks the PATH (isbn + copyNo together, like the composite
 // key). rateSchema checks the BODY of the rate change.
 // Path values arrive as strings; Joi turns "2" into 2 and hands the clean
@@ -815,7 +816,7 @@ const rateSchema = Joi.object({
 });
 
 // ---------------------------------------------------------------------
-// S4-A2  Helpers: one looks, one writes  Slides 12 to 15
+// S4-A2  Helpers: one looks, one writes  Check, Then Write section
 // No req, no res: helpers only talk to the database. Any error they hit
 // goes up to the route's catch.
 // ---------------------------------------------------------------------
@@ -890,7 +891,7 @@ async function updateRate(isbn, copyNo, rentalRate) {
 
 // ---------------------------------------------------------------------
 // S4-A3  PUT /books/:isbn/copies/:copyNo/rent
-//        What You'll Build (slide 4) | Slides 13 to 15 | Slides 21 to 26
+//        What You'll Build | Check, Then Write | Live Demo 1 | Live Demo 2
 // Check the shape (Joi, 400), check the row (404), check the state (409),
 // and only then write (200). Any database failure: your own 500.
 // Compare with S4-B1, the same job done inline in one route.
@@ -932,7 +933,7 @@ app.put('/books/:isbn/copies/:copyNo/return', async (req, res) => {
 
 // ---------------------------------------------------------------------
 // S4-A5  PUT /books/:isbn/copies/:copyNo   (replaces S3 A6)
-//        Cold-Read: Validation (slides 19 and 20) | Slides 27 and 28
+//        Joi cold-read (prediction + answer slides) | Live Demo 2, Q4
 // Joi checks the body BEFORE any query: 1.00 -> 400, {} -> 400,
 // 3.50 -> 200. The database's CHECK constraint is still there behind it.
 // ---------------------------------------------------------------------
@@ -953,7 +954,7 @@ app.put('/books/:isbn/copies/:copyNo', async (req, res) => {
 
 // ---------------------------------------------------------------------
 // S4-A6  GET /books  and  GET /books?title=...   (replaces S3 A1)
-//        Searching Books (slides 29 to 31) | OAL Lab 10
+//        Searching Books slides | Live Demo 3, Q1 to Q3 | OAL Lab 10
 // ?title= is optional. Check first: no title, no WHERE clause.
 // The title is still bound with .input(), so a search never becomes SQL.
 // Compare with S4 Snippet D (/s4-snippet-d/books), which skips the check.
@@ -985,7 +986,7 @@ app.get('/books', async (req, res) => {
   }
 });
 
-// (Failing safely, slide 35: the good DELETE /books/:isbn/copies/:copyNo
+// (Failing Safely, the try/catch slide: the good DELETE /books/:isbn/copies/:copyNo
 //  is S3 A7 above. It already has its database call inside try/catch.)
 
 
@@ -994,11 +995,11 @@ app.get('/books', async (req, res) => {
 // =====================================================================
 
 // ---------------------------------------------------------------------
-// S4-B1  PUT /putrentinlinedemo/:isbn/copies/:copyNo     Slide 11
+// S4-B1  PUT /putrentinlinedemo/:isbn/copies/:copyNo     The "before" slide | Live Demo 1, Q4
 // THE "BEFORE" PICTURE. Not broken: it gives the same answers as S4-A3
 // (minus the Joi check). The problem is that the lookup, the availability
 // rule and the update are all buried in one route, so a return route
-// would have to copy and paste them. Slides 12 to 14 pull them out into
+// would have to copy and paste them. The next slides pull them out into
 // checkAvailable() and markRented().
 // ---------------------------------------------------------------------
 app.put('/putrentinlinedemo/:isbn/copies/:copyNo', async (req, res) => {
@@ -1062,7 +1063,7 @@ async function deleteCopyBroken(isbn, copyNo) {
 }
 
 // ---------------------------------------------------------------------
-// S4-B2  DELETE /deletecopynotrydemo/:isbn/copies/:copyNo   Slide 34
+// S4-B2  DELETE /deletecopynotrydemo/:isbn/copies/:copyNo   No Safety Net slide | Live Demo 3, Q4
 // "Delete Route, No Safety Net". The call is NOT inside try/catch.
 // The helper throws, nothing in your code catches it, so Express 5's
 // default handler answers: a generic 500 page (HTML, with a stack trace
@@ -1076,7 +1077,7 @@ app.delete('/deletecopynotrydemo/:isbn/copies/:copyNo', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// S4-B3  DELETE /deletecopytrydemo/:isbn/copies/:copyNo     Slide 35
+// S4-B3  DELETE /deletecopytrydemo/:isbn/copies/:copyNo     try/catch slide | Live Demo 3, Q4
 // "Catching It, Responding Clean". The same failing helper, now inside
 // try. Your catch runs instead of Express's page: a 500 with JSON you
 // wrote, and the real error in YOUR terminal.
@@ -1097,7 +1098,7 @@ app.delete('/deletecopytrydemo/:isbn/copies/:copyNo', async (req, res) => {
 // PART C  S4 COLD-READ SNIPPETS A TO D  -  INSTRUCTOR CHECK ONLY.
 // DELIBERATELY WRONG. NEVER COPY.
 // ---------------------------------------------------------------------
-// Runnable copies of the four Cold-Read Quiz slides (S4 slides 40 to 43).
+// Runnable copies of the four Cold-Read Quiz slides (S4 Cold-Read Snippets A to D).
 // Every route starts with /s4-snippet-<letter>/ so it can never be
 // mistaken for a real route. Students only READ these in class.
 // =====================================================================
@@ -1129,7 +1130,7 @@ async function setRentalRate(isbn, copyNo, rentalRate) {
 }
 
 // ---------------------------------------------------------------------
-// S4-C-A  PUT /s4-snippet-a/books/:isbn/copies/:copyNo/rent   Slide 40
+// S4-C-A  PUT /s4-snippet-a/books/:isbn/copies/:copyNo/rent   Snippet A
 // Q: What happens if the copy is already rented?
 // A: It rents it again: 200 every time. checkAvailable() is awaited but
 //    its answer is thrown away, so markRented() always runs.
@@ -1146,7 +1147,7 @@ app.put('/s4-snippet-a/books/:isbn/copies/:copyNo/rent', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// S4-C-B  POST /s4-snippet-b/books/:isbn/copies               Slide 41
+// S4-C-B  POST /s4-snippet-b/books/:isbn/copies               Snippet B
 // Q: Does this request make it past validation?
 // A: Yes: every field passes its own check. But copy 2 already exists,
 //    so the INSERT breaks the primary key (ISBN, CopyNo). With no
@@ -1172,7 +1173,7 @@ app.post('/s4-snippet-b/books/:isbn/copies', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// S4-C-C  PUT /s4-snippet-c/books/:isbn/copies/:copyNo        Slide 42
+// S4-C-C  PUT /s4-snippet-c/books/:isbn/copies/:copyNo        Snippet C
 // Q: What happens when this request is sent? (rentalRate 1.00)
 // A: The CHECK constraint refuses 1.00, setRentalRate() throws, and with
 //    no try/catch Express 5's default handler sends a generic 500 page.
@@ -1187,7 +1188,7 @@ app.put('/s4-snippet-c/books/:isbn/copies/:copyNo', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// S4-C-D  GET /s4-snippet-d/books                             Slide 43
+// S4-C-D  GET /s4-snippet-d/books                             Snippet D
 // Q: What does the client get back when the URL has no title filter?
 // A: 200 and []. req.query.title is undefined, the route binds it
 //    anyway, and LIKE '%' + NULL + '%' matches nothing. No error, which
