@@ -1,0 +1,165 @@
+### =====================================================================
+### Session 3 demos (tag s3-demos). Send these in order, top to bottom.
+### VS Code "REST Client" extension, or copy into Postman.
+### Before class: run section 1 of requests/s3-demos.sql.
+### Seed data: 0099826704 is The Firm. Author 3 is John Grisham.
+### =====================================================================
+
+
+### ---------------------------------------------------------------------
+### LIVE DEMO 1: Predict, Then Run (slide 16)
+### ---------------------------------------------------------------------
+
+### Q1. Every book (200, an array)
+GET http://localhost:3000/books
+
+### Q2. One book: The Firm (200)
+GET http://localhost:3000/books/0099826704
+
+### Q3. No such ISBN (404)
+GET http://localhost:3000/books/0000000000
+
+### Q4 is in the Node REPL:  parseInt('0099826704')  ->  99826704
+### Optional, the same mistake inside a route (BAD route B2): 404 for a book that exists
+GET http://localhost:3000/parseintbookdemo/0099826704
+
+
+### ---------------------------------------------------------------------
+### GLUE IT IN? (slide 13): SQL injection
+### ---------------------------------------------------------------------
+
+### BAD route B1, ISBN glued into the SQL: 200 and the first book in the table
+GET http://localhost:3000/getbookdemo/' OR '1'='1
+
+### GOOD route A2, ISBN bound: the same text is just a value, so 404
+GET http://localhost:3000/books/' OR '1'='1
+
+
+### ---------------------------------------------------------------------
+### LIVE DEMO 2: With and Without a Transaction (slide 24)
+### ---------------------------------------------------------------------
+
+### Q1. BAD route B3, no transaction, author 999 does not exist: 500 ...
+###     ... but the Book row is left behind. Show it with section 2 of the .sql, then delete it.
+POST http://localhost:3000/postbookdemo
+Content-Type: application/json
+
+{
+  "isbn": "0000000004",
+  "title": "Should Not Exist",
+  "yearPublish": "2026",
+  "publisherId": 1,
+  "bookCat": null,
+  "authorId": 999
+}
+
+### Q2. GOOD route A3, same request inside a transaction: 500 and NO Book row
+POST http://localhost:3000/books
+Content-Type: application/json
+
+{
+  "isbn": "0000000004",
+  "title": "Should Not Exist",
+  "yearPublish": "2026",
+  "publisherId": 1,
+  "bookCat": null,
+  "authorId": 999
+}
+
+### Prove Q2: 404, the rollback undid the Book row too
+GET http://localhost:3000/books/0000000004
+
+### Q3. A real author: 201, one row in Book and one in BookAuthor (section 3 of the .sql)
+POST http://localhost:3000/books
+Content-Type: application/json
+
+{
+  "isbn": "0000000002",
+  "title": "Lab Test Book",
+  "yearPublish": "2026",
+  "publisherId": 1,
+  "bookCat": null,
+  "authorId": 1
+}
+
+### Q4. PUT on an ISBN that does not exist (404)
+PUT http://localhost:3000/books/0000000099
+Content-Type: application/json
+
+{ "title": "Nobody", "yearPublish": "2026", "publisherId": 1, "bookCat": null }
+
+### Q4 contrast: the same PUT on the book from Q3 (200)
+PUT http://localhost:3000/books/0000000002
+Content-Type: application/json
+
+{ "title": "Lab Test Book, 2nd Edition", "yearPublish": "2026", "publisherId": 1, "bookCat": null }
+
+
+### ---------------------------------------------------------------------
+### COMPOSITE KEYS and CHECK (slides 28 to 30). Uses test book 0000000003.
+### ---------------------------------------------------------------------
+
+### GET one copy (200)
+GET http://localhost:3000/books/0000000003/copies/1
+
+### A copy that does not exist (404)
+GET http://localhost:3000/books/0000000003/copies/9
+
+### CHECK demo: predict first. 1.00 is below 2.50: 500, the terminal names the CHECK constraint
+PUT http://localhost:3000/books/0000000003/copies/1
+Content-Type: application/json
+
+{ "rentalRate": 1.00 }
+
+### Then 3.50: 200 and the updated row
+PUT http://localhost:3000/books/0000000003/copies/1
+Content-Type: application/json
+
+{ "rentalRate": 3.50 }
+
+### DELETE one copy (204). Copy 2 survives: GET it afterwards.
+DELETE http://localhost:3000/books/0000000003/copies/1
+
+
+### ---------------------------------------------------------------------
+### LIVE DEMO 3: One, Many or None (slide 36)
+### ---------------------------------------------------------------------
+
+### Q1. Author 3: several books (200)
+GET http://localhost:3000/authors/3/books
+
+### Q2. Author 99: no books, so 200 and [], not 404
+GET http://localhost:3000/authors/99/books
+
+
+### ---------------------------------------------------------------------
+### COLD-READ SNIPPETS A to D (slides 39 to 42): instructor check only.
+### Run section 1 of requests/s3-demos.sql first. Test book 0000000003 only.
+### ---------------------------------------------------------------------
+
+### Snippet A: 204 ... then GET copy 2 below: 404, EVERY copy is gone. Re-run section 1 of the .sql.
+DELETE http://localhost:3000/s3-snippet-a/books/0000000003/copies/1
+
+### Snippet A check
+GET http://localhost:3000/books/0000000003/copies/2
+
+### Snippet B: 500, yet copy 3 WAS saved (check with the GET below)
+POST http://localhost:3000/s3-snippet-b/books/0000000003/copies
+Content-Type: application/json
+
+{ "copyNo": 3, "rentalRate": 2.75 }
+
+### Snippet B check: 200, the row is there
+GET http://localhost:3000/books/0000000003/copies/3
+
+### Snippet C: 200 with an empty body, even though copy 1 exists
+GET http://localhost:3000/s3-snippet-c/books/0000000003/copies/1
+
+### Snippet D: 500 ... then GET below: 200, the Book row survived the rollback (an orphan)
+POST http://localhost:3000/s3-snippet-d/books
+Content-Type: application/json
+
+{ "isbn": "0000000005", "title": "Orphan Test", "yearPublish": "2026", "authorId": 999 }
+
+### Snippet D check. Clean up with section 1 of the .sql.
+GET http://localhost:3000/books/0000000005
