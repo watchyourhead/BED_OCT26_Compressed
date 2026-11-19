@@ -4,7 +4,7 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- 1. BEFORE CLASS: clean slate + the CHECK-demo copies (slide 30)
+-- 1. BEFORE CLASS: clean slate + the CHECK-demo copies (CHECK constraint slide)
 --    Safe to run again at any time.
 -- ---------------------------------------------------------------------
 DELETE FROM BookCopy   WHERE ISBN LIKE '00000000%';

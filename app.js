@@ -198,7 +198,8 @@ app.delete('/authors/:id', async (req, res) => {
 // =====================================================================
 // SESSION 3 DEMOS  (tag: s3-demos, built on s02-oal-end)
 // ---------------------------------------------------------------------
-// Everything the Session 3 IPL runs live, in slide order.
+// Everything the Session 3 IPL runs live, in slide order. Comments name
+// slides by title, not number, because the deck keeps changing.
 //
 //   PART A  GOOD ROUTES  - what the slides teach. Students build these
 //                          themselves in OAL Labs 6 and 7.
@@ -226,8 +227,8 @@ app.delete('/authors/:id', async (req, res) => {
 // ---------------------------------------------------------------------
 
 // ---------------------------------------------------------------------
-// A2  GET /books/:isbn                 Slide 12 | Live Demo 1, Q2 and Q3
-//                                      Glue It In? (slide 13), step 3
+// A2  GET /books/:isbn                 GET /books/:isbn slide | Live Demo 1, Q2 and Q3
+//                                      Optional injection recap (B1), step 2
 // The ISBN is text: bind it with sql.Char(10), never parseInt.
 // An empty recordset means 404.
 // ---------------------------------------------------------------------
@@ -259,7 +260,7 @@ app.get('/books/:isbn', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// A3  POST /books  (WITH a transaction)  Slide 22 | Live Demo 2, Q2 and Q3
+// A3  POST /books  (WITH a transaction)  Wrapping the Writes slide | Live Demo 2, Q2 and Q3
 // Two writes, one decision: Book and BookAuthor are both saved, or
 // neither is. BOTH requests come from transaction.request().
 // Compare with B3 (POST /postbookdemo), which has no transaction.
@@ -316,7 +317,7 @@ app.post('/books', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// A4  PUT /books/:isbn                 Slide 23 | Live Demo 2, Q4
+// A4  PUT /books/:isbn                 PUT /books/:isbn slide | Live Demo 2, Q4
 // One UPDATE is already all or nothing, so no transaction here.
 // rowsAffected[0] === 0 means no such book: 404.
 // ---------------------------------------------------------------------
@@ -357,7 +358,7 @@ app.put('/books/:isbn', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// A5  GET /books/:isbn/copies/:copyNo  Slide 28
+// A5  GET /books/:isbn/copies/:copyNo  Composite-key GET slide
 // A composite key: ISBN and CopyNo together find one BookCopy row.
 // Both are bound, and the WHERE uses both.
 // ---------------------------------------------------------------------
@@ -398,7 +399,7 @@ app.get('/books/:isbn/copies/:copyNo', async (req, res) => {
 // ---------------------------------------------------------------------
 
 // ---------------------------------------------------------------------
-// A7  DELETE /books/:isbn/copies/:copyNo  Slide 29
+// A7  DELETE /books/:isbn/copies/:copyNo  PUT/DELETE slide
 // Both parts of the key in the WHERE, so exactly one copy goes.
 // (Cold-Read Snippet A is this route with CopyNo left out.)
 // ---------------------------------------------------------------------
@@ -431,7 +432,7 @@ app.delete('/books/:isbn/copies/:copyNo', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// A8  GET /authors/:id/books           Slide 34 | Live Demo 3
+// A8  GET /authors/:id/books           An author's books slide | Live Demo 3
 // A JOIN: BookAuthor only holds ids, so it is matched against Book inside
 // one query. One row, many rows or none: res.json(result.recordset)
 // handles all three, and an author with no books is 200 with [].
@@ -475,7 +476,9 @@ app.get('/authors/:id/books', async (req, res) => {
 // =====================================================================
 
 // ---------------------------------------------------------------------
-// B1  GET /getbookdemo/:isbn           Glue It In? (slide 13)
+// B1  GET /getbookdemo/:isbn           OPTIONAL: not on a slide. A 2-minute
+//                                      recap of Session 2's SQL injection,
+//                                      on Book's text key, if time allows.
 // Copy of A2 with the ISBN GLUED into the SQL string instead of bound.
 // Try: GET /getbookdemo/' OR '1'='1
 //   The SQL becomes  WHERE ISBN = '' OR '1'='1'  which is true for every
@@ -509,7 +512,7 @@ app.get('/getbookdemo/:isbn', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// B2  GET /parseintbookdemo/:isbn      The Disappearing Zero (slide 14)
+// B2  GET /parseintbookdemo/:isbn      The Disappearing Zero / Live Demo 1, Q4
 //                                      Live Demo 1, Q4
 // Copy of A2 with parseInt on the ISBN, the Session 2 habit.
 // Try: GET /parseintbookdemo/0099826704
@@ -599,7 +602,7 @@ app.post('/postbookdemo', async (req, res) => {
 // PART C  S3 COLD-READ SNIPPETS A TO D  -  INSTRUCTOR CHECK ONLY.
 // DELIBERATELY WRONG. NEVER COPY.
 // ---------------------------------------------------------------------
-// Runnable copies of the four Cold-Read Quiz slides (S3 slides 39 to 42),
+// Runnable copies of the four Cold-Read Quiz slides (S3 Cold-Read Snippets A to D),
 // so you can check each answer before class. Every route starts with
 // /s3-snippet-<letter>/ so it can never be mistaken for a real route.
 // Students only READ these in class; nobody needs to run them.
@@ -608,7 +611,7 @@ app.post('/postbookdemo', async (req, res) => {
 // =====================================================================
 
 // ---------------------------------------------------------------------
-// C-A  DELETE /s3-snippet-a/books/:isbn/copies/:copyNo     Slide 39
+// C-A  DELETE /s3-snippet-a/books/:isbn/copies/:copyNo     Snippet A
 // Q: What does this DELETE route do?
 // A: Deletes EVERY copy of the book. :copyNo arrives but is never bound
 //    or used, so the WHERE matches all copies. 204, no error, no warning.
@@ -637,7 +640,7 @@ app.delete('/s3-snippet-a/books/:isbn/copies/:copyNo', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// C-B  POST /s3-snippet-b/books/:isbn/copies               Slide 40
+// C-B  POST /s3-snippet-b/books/:isbn/copies               Snippet B
 // Q: What does the logic in this POST route do?
 // A: An INSERT with no OUTPUT returns no recordset: result.recordset is
 //    undefined, so .length throws a TypeError. The catch turns it into a
@@ -676,7 +679,7 @@ app.post('/s3-snippet-b/books/:isbn/copies', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// C-C  GET /s3-snippet-c/books/:isbn/copies/:copyNo        Slide 41
+// C-C  GET /s3-snippet-c/books/:isbn/copies/:copyNo        Snippet C
 // Q: What does this GET route actually return?
 // A: An empty body, every time. The query is never awaited: .then() sets
 //    result later, but res.json(result) has already run with undefined.
@@ -713,7 +716,7 @@ app.get('/s3-snippet-c/books/:isbn/copies/:copyNo', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------
-// C-D  POST /s3-snippet-d/books                            Slide 42
+// C-D  POST /s3-snippet-d/books                            Snippet D
 // Q: What's wrong with this POST route?
 // A: The Book INSERT uses connection.request(), so it runs OUTSIDE the
 //    transaction. With authorId 999 the BookAuthor INSERT fails and

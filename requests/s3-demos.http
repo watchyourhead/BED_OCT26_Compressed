@@ -7,7 +7,7 @@
 
 
 ### ---------------------------------------------------------------------
-### LIVE DEMO 1: Predict, Then Run (slide 16)
+### LIVE DEMO 1: Predict, Then Run
 ### ---------------------------------------------------------------------
 
 ### Q1. Every book (200, an array)
@@ -25,7 +25,7 @@ GET http://localhost:3000/parseintbookdemo/0099826704
 
 
 ### ---------------------------------------------------------------------
-### GLUE IT IN? (slide 13): SQL injection
+### OPTIONAL, NOT ON A SLIDE: SQL-injection recap from Session 2
 ### ---------------------------------------------------------------------
 
 ### BAD route B1, ISBN glued into the SQL: 200 and the first book in the table
@@ -36,7 +36,7 @@ GET http://localhost:3000/books/' OR '1'='1
 
 
 ### ---------------------------------------------------------------------
-### LIVE DEMO 2: With and Without a Transaction (slide 24)
+### LIVE DEMO 2: With and Without a Transaction
 ### ---------------------------------------------------------------------
 
 ### Q1. BAD route B3, no transaction, author 999 does not exist: 500 ...
@@ -96,7 +96,7 @@ Content-Type: application/json
 
 
 ### ---------------------------------------------------------------------
-### COMPOSITE KEYS and CHECK (slides 28 to 30). Uses test book 0000000003.
+### COMPOSITE KEYS and CHECK (composite-key and CHECK slides). Uses test book 0000000003.
 ### ---------------------------------------------------------------------
 
 ### GET one copy (200)
@@ -122,7 +122,7 @@ DELETE http://localhost:3000/books/0000000003/copies/1
 
 
 ### ---------------------------------------------------------------------
-### LIVE DEMO 3: One, Many or None (slide 36)
+### LIVE DEMO 3: One, Many or None
 ### ---------------------------------------------------------------------
 
 ### Q1. Author 3: several books (200)
@@ -133,7 +133,7 @@ GET http://localhost:3000/authors/99/books
 
 
 ### ---------------------------------------------------------------------
-### COLD-READ SNIPPETS A to D (slides 39 to 42): instructor check only.
+### COLD-READ SNIPPETS A to D (Cold-Read Quiz slides): instructor check only.
 ### Run section 1 of requests/s3-demos.sql first. Test book 0000000003 only.
 ### ---------------------------------------------------------------------
 
